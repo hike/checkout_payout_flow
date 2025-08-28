@@ -19,7 +19,7 @@ const apiBaseUrl = isProduction
     : 'https://api.sandbox.checkout.com';
 
 // Route for card storage using internal API
-app.get('/checkout/saveCardInfo/:sessionId', async (req, res) => {
+app.get('/saveCardInfo/:sessionId', async (req, res) => {
     const sessionId = req.params.sessionId;
     
     try {
