@@ -6,7 +6,58 @@ require('dotenv').config();
 
 // For Node.js 18+ fetch is available globally
 // If you're using an older version, uncomment the line below:
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch'); // Commented out due to ES module compatibility
+// HTTP replacement for fetch using Node.js built-in modules
+const http = require('http');
+const https = require('https');
+const { URL } = require('url');
+
+function fetchReplacement(url, options = {}) {
+    return new Promise((resolve, reject) => {
+        const parsedUrl = new URL(url);
+        const isHttps = parsedUrl.protocol === 'https:';
+        const httpModule = isHttps ? https : http;
+        
+        const requestOptions = {
+            hostname: parsedUrl.hostname,
+            port: parsedUrl.port || (isHttps ? 443 : 80),
+            path: parsedUrl.pathname + parsedUrl.search,
+            method: options.method || 'GET',
+            headers: options.headers || {}
+        };
+        
+        const req = httpModule.request(requestOptions, (res) => {
+            let data = '';
+            
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
+            
+            res.on('end', () => {
+                const response = {
+                    ok: res.statusCode >= 200 && res.statusCode < 300,
+                    status: res.statusCode,
+                    json: () => Promise.resolve(JSON.parse(data)),
+                    text: () => Promise.resolve(data)
+                };
+                resolve(response);
+            });
+        });
+        
+        req.on('error', (error) => {
+            reject(error);
+        });
+        
+        if (options.body) {
+            req.write(options.body);
+        }
+        
+        req.end();
+    });
+}
+
+// Replace the global fetch for this context
+const fetch = fetchReplacement;
 
 const app = express();
 const port = process.env.PORT || 4000;
