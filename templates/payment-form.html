@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Withdrawal Method - Instant Payouts</title>
+    <meta http-equiv="Content-Security-Policy" content="
+        connect-src 'self' https://*.checkout.com;
+        frame-src 'self' https://*.checkout.com;
+        script-src 'self' 'unsafe-inline' https://*.checkout.com;
+        img-src 'self' https://*.checkout.com;
+        style-src 'self' 'unsafe-inline';
+    ">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        h1 {
+            color: #4c1d95;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        #flow-container {
+            margin: 30px 0;
+            min-height: 350px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #667eea;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .loading::before {
+            content: '🎯';
+            display: block;
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .error {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 16px;
+            margin: 20px 0;
+            border-left: 4px solid #ef4444;
+            font-weight: 600;
+        }
+        
+        .success {
+            background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+            color: #16a34a;
+            padding: 20px;
+            border-radius: 16px;
+            margin: 20px 0;
+            border-left: 4px solid #22c55e;
+            font-weight: 600;
+        }
+        
+        .secure-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            padding: 12px;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-radius: 12px;
+            color: #0284c7;
+            font-size: 14px;
+            font-weight: 600;
+            border: 1px solid rgba(2, 132, 199, 0.2);
+        }
+        
+        .secure-icon {
+            font-size: 16px;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 24px;
+                border-radius: 16px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .logo {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎯</div>
+            <h1>Add Withdrawal Method</h1>
+            <p class="subtitle">Securely store your card for instant payouts</p>
+        </div>
+
+        <div id="flow-container">
+        <div class="loading">Setting up secure payout form</div>
+        </div>
+
+        <div id="status-messages"></div>
+        
+        <div class="secure-badge">
+            <span class="secure-icon">🔒</span>
+            <span>Bank-grade security • Lightning-fast withdrawals</span>
+        </div>
+    </div>
+
+    <!-- Checkout.com Flow Library (Correct version from documentation) -->
+    <script src="https://checkout-web-components.checkout.com/index.js"></script>
+    
+    <script>
+        // Session data from internal API - will be replaced by server
+        const sessionData = {{SESSION_DATA}};
+        const publicKey = '{{PUBLIC_KEY}}';
+        const environment = '{{ENVIRONMENT}}';
+        
+        console.log('Session data loaded:', sessionData);
+        console.log('Public key:', publicKey);
+        console.log('Environment:', environment);
+        
+        // Initialize Checkout Flow according to official documentation
+        async function initializeFlow() {
+            try {
+                if (!publicKey) {
+                    throw new Error('Public key not configured');
+                }
+                
+                // Wait for CheckoutWebComponents to be available
+                let attempts = 0;
+                const maxAttempts = 50;
+                
+                while (typeof CheckoutWebComponents === 'undefined' && attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                
+                if (typeof CheckoutWebComponents === 'undefined') {
+                    throw new Error('CheckoutWebComponents library failed to load');
+                }
+                
+                console.log('CheckoutWebComponents available:', CheckoutWebComponents);
+                
+                // Create payment session object for Flow (from your internal API)
+                const paymentSession = {
+                    id: sessionData.sessionId,
+                    payment_session_token: sessionData.payment_session_token
+                };
+                
+                console.log('Payment session object:', paymentSession);
+                
+                // Configure Flow with payment session data and Bingo Champions theme
+                const checkout = await CheckoutWebComponents({
+                    paymentSession: paymentSession,
+                    publicKey: publicKey,
+                    environment: environment,
+                    theme: {
+                        colorPrimary: '#667eea',
+                        colorBackground: 'rgba(255, 255, 255, 0.9)',
+                        colorText: '#4c1d95',
+                        colorDanger: '#dc2626',
+                        colorSuccess: '#16a34a',
+                        fontFamily: 'Poppins, sans-serif',
+                        spacingUnit: '8px',
+                        borderRadius: '12px',
+                        focusBoxShadow: '0 0 0 2px rgba(102, 126, 234, 0.3)',
+                        componentBorderColor: 'rgba(102, 126, 234, 0.2)',
+                        componentBackground: 'rgba(255, 255, 255, 0.95)',
+                        componentBorderRadius: '12px',
+                        componentBoxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                    },
+                    onPaymentCompleted: async (self, paymentResponse) => {
+                        console.log('Card storage successful:', paymentResponse);
+                        document.getElementById('status-messages').innerHTML = 
+                            '<div class="success">🎉 Withdrawal method added successfully! Now you can receive instant payouts!</div>';
+                    },
+                    onError: (error) => {
+                        console.error('Card storage failed:', error);
+                        document.getElementById('status-messages').innerHTML = 
+                            '<div class="error">❌ Unable to add withdrawal method: ' + (error.message || error.type || 'Please try again') + '</div>';
+                    },
+                    onReady: () => {
+                        console.log('Checkout Flow ready for withdrawal setup');
+                        const loadingElement = document.querySelector('.loading');
+                        if (loadingElement) {
+                            loadingElement.textContent = 'Enter your card details for instant withdrawals';
+                        }
+                    }
+                });
+                
+                console.log('Checkout WebComponents initialized:', checkout);
+                
+                // Create and mount the flow component (according to docs)
+                const flowComponent = checkout.create('flow');
+                const flowContainer = document.getElementById('flow-container');
+                
+                // Clear loading message
+                flowContainer.innerHTML = '';
+                
+                // Mount the flow component
+                flowComponent.mount('#flow-container');
+                
+                        console.log('Withdrawal flow component successfully created and mounted');
+                
+            } catch (error) {
+                console.error('Error initializing flow:', error);
+                        document.getElementById('status-messages').innerHTML = 
+                            '<div class="error">❌ Failed to initialize withdrawal setup: ' + error.message + '</div>';
+                
+                // Show error message in the container
+                showErrorMessage(error.message);
+            }
+        }
+        
+        // Show error message in flow container
+        function showErrorMessage(errorMessage) {
+            const flowContainer = document.getElementById('flow-container');
+            flowContainer.innerHTML = 
+                        '<div style="text-align: center; padding: 20px; border-radius: 16px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); color: #dc2626; border-left: 4px solid #ef4444;">' +
+                            '<h3>🚫 Withdrawal Setup Error</h3>' +
+                            '<p><strong>Error:</strong> ' + errorMessage + '</p>' +
+                            '<p>Please try refreshing the page or contact support.</p>' +
+                        '</div>';
+        }
+        
+        // Auto-initialize when page loads
+        window.addEventListener('load', () => {
+            setTimeout(initializeFlow, 1000); // Increased delay to ensure library is fully loaded
+        });
+    </script>
+</body>
+</html>
