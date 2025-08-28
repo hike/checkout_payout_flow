@@ -4,6 +4,10 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
 
+// For Node.js 18+ fetch is available globally
+// If you're using an older version, uncomment the line below:
+const fetch = require('node-fetch');
+
 const app = express();
 const port = process.env.PORT || 4000;
 
